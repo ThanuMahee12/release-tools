@@ -1,0 +1,63 @@
+name: Reusable Release
+
+# Reusable release workflow. Other projects call it from their own workflow with:
+#
+#   jobs:
+#     release:
+#       permissions:
+#         contents: write
+#       uses: ThanuMahee12/release-tools/.github/workflows/release.yml@main
+#       with:
+#         prefix: v
+#
+# It cuts a simple, incrementing tag (v1, v2, v3, ...) on the CALLER repo using
+# the shared scripts/version/simple_version.sh script.
+
+on:
+  workflow_call:
+    inputs:
+      prefix:
+        description: "Tag prefix (e.g. v -> v1, v2, ...)"
+        type: string
+        default: v
+      runs-on:
+        description: "Runner label to execute on"
+        type: string
+        default: ubuntu-latest
+      tools-ref:
+        description: "Git ref of release-tools whose scripts should run"
+        type: string
+        default: main
+
+jobs:
+  release:
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: write
+    steps:
+      # Caller repo goes in ./repo so the release tools (./tools) live in a
+      # SIBLING directory and never show up as untracked changes in the caller.
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          fetch-depth: 0          # full tag history is needed to compute the next version
+
+      - name: Checkout release tools
+        uses: actions/checkout@v4
+        with:
+          repository: ThanuMahee12/release-tools
+          ref: ${{ inputs.tools-ref }}
+          path: tools
+
+      - name: Configure git identity
+        working-directory: repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Cut simple release
+        working-directory: repo
+        env:
+          PREFIX: ${{ inputs.prefix }}
+        run: bash "${GITHUB_WORKSPACE}/tools/scripts/version/simple_version.sh"
