@@ -38,13 +38,13 @@ jobs:
       # Caller repo goes in ./repo so the release tools (./tools) live in a
       # SIBLING directory and never show up as untracked changes in the caller.
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: repo
           fetch-depth: 0          # full tag history is needed to compute the next version
 
       - name: Checkout release tools
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ThanuMahee12/release-tools
           ref: ${{ inputs.tools-ref }}
